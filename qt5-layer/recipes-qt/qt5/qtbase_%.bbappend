@@ -1,4 +1,4 @@
-n# Copyright (C) 2013 Eric Bénard - Eukréa Electromatique
+# Copyright (C) 2013 Eric Bénard - Eukréa Electromatique
 
 HAS_X11 = "${@base_contains('DISTRO_FEATURES', 'x11', 1, 0, d)}"
 
