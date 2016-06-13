@@ -11,9 +11,10 @@ LICENSE_FLAGS = "commercial"
 PACKAGE_ARCH = "fsl-imx6"
 XX_LEGACY ?= "false"
 
-DEPENDS += "${@base_contains('DISTRO_FEATURES', 'x11', 'virtual/libx11 libxdamage libxext libxfixes mesa', \
-                             base_contains('DISTRO_FEATURES', 'wayland', 'wayland', \
-                                           '', d), d)}"
+DEPENDS += "${@\
+  bb.utils.contains('DISTRO_FEATURES', 'x11', \
+                    'virtual/libx11 libxdamage libxext libxfixes mesa', \
+  bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '', d), d)}"
 
 EXTRA_PROVIDES = " virtual/libgl virtual/libgles1 virtual/libgles2"
 PROVIDES += "virtual/wayland-egl virtual/libgal-x11 virtual/egl virtual/libopenvg virtual/libg2d ${EXTRA_PROVIDES}"
@@ -53,7 +54,7 @@ PACKAGES =+ "libclc-mx6 libclc-mx6-dev \
 
 python __anonymous () {
         # Skip package if it does not match the machine float-point type in use
-        is_machine_hardfp = base_contains("TUNE_FEATURES", "callconvention-hard", True, False, d)
+        is_machine_hardfp = bb.utils.contains("TUNE_FEATURES", "callconvention-hard", True, False, d)
         is_package_hardfp = d.getVar("PACKAGE_FP_TYPE", True) == "hardfp"
 
         if is_package_hardfp != is_machine_hardfp:
@@ -63,8 +64,8 @@ python __anonymous () {
                 raise bb.parse.SkipPackage("Package Float-Point is not compatible with the machine")
 }
 
-USE_X11 = "${@base_contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
-USE_WL = "${@base_contains("DISTRO_FEATURES", "wayland", "yes", "no", d)}"
+USE_X11 = "${@bb.utils.contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
+USE_WL = "${@bb.utils.contains("DISTRO_FEATURES", "wayland", "yes", "no", d)}"
 
 # Inhibit warnings about files being stripped.
 INHIBIT_PACKAGE_STRIP = "1"
