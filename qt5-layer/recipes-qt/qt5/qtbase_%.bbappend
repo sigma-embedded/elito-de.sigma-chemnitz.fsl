@@ -1,11 +1,11 @@
 # Copyright (C) 2013 Eric Bénard - Eukréa Electromatique
 
-HAS_X11 = "${@base_contains('DISTRO_FEATURES', 'x11', 1, 0, d)}"
+HAS_X11 = "${@bb.utils.contains('DISTRO_FEATURES', 'x11', 1, 0, d)}"
 
 IS_MX6SL = "0"
 
 PACKAGECONFIG_GL = "gles2"
-QT_CONFIG_FLAGS_append = "${@base_contains('DISTRO_FEATURES', 'x11', ' -no-eglfs', ' -eglfs', d)}"
+QT_CONFIG_FLAGS_append = "${@bb.utils.contains('DISTRO_FEATURES', 'x11', ' -no-eglfs', ' -eglfs', d)}"
 
 do_configure_prepend_mx6() {
     # adapt qmake.conf to our needs
