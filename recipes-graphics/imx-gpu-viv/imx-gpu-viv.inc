@@ -56,7 +56,7 @@ PACKAGES =+ "libclc-mx6 libclc-mx6-dev \
 python __anonymous () {
         # Skip package if it does not match the machine float-point type in use
         is_machine_hardfp = bb.utils.contains("TUNE_FEATURES", "callconvention-hard", True, False, d)
-        is_package_hardfp = d.getVar("PACKAGE_FP_TYPE", True) == "hardfp"
+        is_package_hardfp = d.getVar("PV", True).endswith("-hfp")
         plain_pv = d.getVar("PV", True).split('-')[0]
         req_pv = d.getVar("KERNEL_IMX_GPU_VIV_API", True) or ""
 
