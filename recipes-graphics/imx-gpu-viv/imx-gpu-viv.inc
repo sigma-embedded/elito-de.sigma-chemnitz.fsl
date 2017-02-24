@@ -67,7 +67,7 @@ python __anonymous () {
                 bb.debug(1, "Skipping %s (%s) as machine and package float-point does not match" % (PN, PV))
                 raise bb.parse.SkipPackage("Package Float-Point is not compatible with the machine")
 
-        if !plain_pv.startswith(req_pv):
+        if not plain_pv.startswith(req_pv):
                 raise bb.parse.SkipPackage("Kernel-API mismatch (%s vs. %s)" %
                                            (req_pv, plain_pv))
 }
