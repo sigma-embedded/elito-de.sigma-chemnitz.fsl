@@ -57,12 +57,18 @@ python __anonymous () {
         # Skip package if it does not match the machine float-point type in use
         is_machine_hardfp = bb.utils.contains("TUNE_FEATURES", "callconvention-hard", True, False, d)
         is_package_hardfp = d.getVar("PACKAGE_FP_TYPE", True) == "hardfp"
+        plain_pv = d.getVar("PV", True).split('-')[0]
+        req_pv = d.getVar("KERNEL_IMX_GPU_VIV_API", True) or ""
 
         if is_package_hardfp != is_machine_hardfp:
                 PN = d.getVar("PN", True)
                 PV = d.getVar("PV", True)
                 bb.debug(1, "Skipping %s (%s) as machine and package float-point does not match" % (PN, PV))
                 raise bb.parse.SkipPackage("Package Float-Point is not compatible with the machine")
+
+        if !plain_pv.startswith(req_pv):
+                raise bb.parse.SkipPackage("Kernel-API mismatch (%s vs. %s)" %
+                                           (req_pv, plain_pv))
 }
 
 USE_X11 = "${@bb.utils.contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
