@@ -1,5 +1,5 @@
 # Copyright (C) 2012-2015 Freescale Semiconductor
-# Copyright (C) 2012-2014 O.S. Systems Software LTDA.
+# Copyright (C) 2012-2016 O.S. Systems Software LTDA.
 # Released under the MIT license (see COPYING.MIT for the terms)
 
 require recipes-graphics/xorg-driver/xorg-driver-video.inc
@@ -11,7 +11,7 @@ inherit autotools-brokensep update-rc.d pkgconfig
 
 DEPENDS += "virtual/xserver virtual/libx11 virtual/libgal-x11 imx-gpu-viv pixman"
 
-LIC_FILES_CHKSUM = "file://COPYING-GPL-2;md5=59530bdf33659b29e73d4adb9f9f6552"
+LIC_FILES_CHKSUM = "file://COPYING-MIT;md5=b5e9d9f5c02ea831ab3ecf802bb7c4f3"
 
 FSL_MIRROR = "http://www.freescale.com/lgfiles/NMG/MAD/YOCTO"
 SRC_URI = "${FSL_MIRROR}/xserver-xorg-video-imx-viv-${PV}.tar.gz \
@@ -23,6 +23,7 @@ INITSCRIPT_PARAMS = "start 99 2 3 4 5 ."
 
 EXTRA_OEMAKE += "-C ${S} -f Makefile prefix=${D}/usr \
                  sysroot=${STAGING_DIR_TARGET} \
+                 LFLAGS="${LDFLAGS}" \
                  BUSID_HAS_NUMBER=1 \
                  BUILD_IN_YOCTO=1 \
                  XSERVER_GREATER_THAN_13=1"
@@ -77,4 +78,5 @@ FILES_${PN}-dbg = "${libdir}/*/*/*/.debug ${libdir}/.debug/libfsl_x11_ext${SOLIB
 
 FILES_xserver-xorg-extension-viv-autohdmi = " ${libdir}/libfsl_x11_ext${SOLIBS} ${exec_prefix}/bin/autohdmi ${sysconfdir}/init.d/rc.autohdmi"
 
+PACKAGE_ARCH = "${MACHINE_SOCARCH}"
 COMPATIBLE_MACHINE = "(mx6)"
