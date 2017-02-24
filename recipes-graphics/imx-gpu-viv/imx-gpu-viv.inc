@@ -6,15 +6,16 @@ DESCRIPTION = "GPU driver and apps for imx6"
 SECTION = "libs"
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://gpu-core/usr/include/gc_vdk.h;beginline=5;endline=11;md5=12c028cbbbedb4b8770267131500592c"
-LICENSE_FLAGS = "commercial"
+LICENSE_FLAGS = "license-freescale"
 
 PACKAGE_ARCH = "fsl-imx6"
-XX_LEGACY ?= "false"
 
 DEPENDS += "${@\
   bb.utils.contains('DISTRO_FEATURES', 'x11', \
                     'virtual/libx11 libxdamage libxext libxfixes mesa', \
-  bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '', d), d)}"
+  bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '', d), d)} \
+  libpng \
+"
 
 EXTRA_PROVIDES = " virtual/libgl virtual/libgles1 virtual/libgles2"
 PROVIDES += "virtual/wayland-egl virtual/libgal-x11 virtual/egl virtual/libopenvg virtual/libg2d ${EXTRA_PROVIDES}"
@@ -71,8 +72,8 @@ python __anonymous () {
                                            (req_pv, plain_pv))
 }
 
-USE_X11 = "${@bb.utils.contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
-USE_WL = "${@bb.utils.contains("DISTRO_FEATURES", "wayland", "yes", "no", d)}"
+HAS_X11 = "${@bb.utils.contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
+HAS_WL = "${@bb.utils.contains("DISTRO_FEATURES", "wayland", "yes", "no", d)}"
 
 # Inhibit warnings about files being stripped.
 INHIBIT_PACKAGE_STRIP = "1"
@@ -112,7 +113,8 @@ python __anonymous() {
         d.appendVar("RCONFLICTS_" + fullp, pkgs)
 }
 
-IS_MX6SL = "0"
+IMXGPU_imxgpu3d = "3d"
+IMXGPU_imxgpu2d = "2d"
 
 do_install () {
     install -d ${D}${libdir}
@@ -128,26 +130,9 @@ do_install () {
 
     install -d ${D}${libdir}/pkgconfig
 
-    # The preference order, based in DISTRO_FEATURES, is x11, wayland and fb
-    if [ "${USE_X11}" = "yes" ]; then
-        cp -r ${S}/gpu-core/usr/lib/dri ${D}${libdir}
-        cp -r ${S}/apitrace/x11/usr/lib/* ${D}${libdir}
-        cp -r ${S}/apitrace/x11/usr/bin/* ${D}${bindir}
-
-        backend=x11
-
-        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/egl_x11.pc ${D}${libdir}/pkgconfig/egl.pc
-        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv1_cm_x11.pc ${D}${libdir}/pkgconfig/glesv1_cm.pc
-        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv2_x11.pc ${D}${libdir}/pkgconfig/glesv2.pc
-        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/vg_x11.pc ${D}${libdir}/pkgconfig/vg.pc
-        ! $XX_LEGACY || mv ${D}${libdir}/libGAL_egl.dri.so ${D}${libdir}/libGAL_egl.so
-        #FIXME: WL & X11 is not currently functional
-        #if [ "${USE_WL}" = "yes" ]; then
-        #    install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/gc_wayland_protocol.pc ${D}${libdir}/pkgconfig/gc_wayland_protocol.pc
-        #    install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/wayland-egl.pc ${D}${libdir}/pkgconfig/wayland-egl.pc
-        #    install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/wayland-viv.pc ${D}${libdir}/pkgconfig/wayland-viv.pc
-        #fi
-    elif [ "${USE_WL}" = "yes" ]; then
+    # The preference order, based in DISTRO_FEATURES. The backend
+    # preference order is Wayland, X11 and Framebuffer.
+    if [ "${HAS_WL}" = "yes" ]; then
         cp -r ${S}/apitrace/non-x11/usr/lib/* ${D}${libdir}
         cp -r ${S}/apitrace/non-x11/usr/bin/* ${D}${bindir}
 
@@ -160,7 +145,17 @@ do_install () {
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/gc_wayland_protocol.pc ${D}${libdir}/pkgconfig/gc_wayland_protocol.pc
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/wayland-egl.pc ${D}${libdir}/pkgconfig/wayland-egl.pc
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/wayland-viv.pc ${D}${libdir}/pkgconfig/wayland-viv.pc
-        ! $XX_LEGACY || mv ${D}${libdir}/libGAL_egl.${backend}.so ${D}${libdir}/libGAL_egl.so
+    elif [ "${HAS_X11}" = "yes" ]; then
+        cp -r ${S}/gpu-core/usr/lib/dri ${D}${libdir}
+        cp -r ${S}/apitrace/x11/usr/lib/* ${D}${libdir}
+        cp -r ${S}/apitrace/x11/usr/bin/* ${D}${bindir}
+
+        backend=x11
+
+        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/egl_x11.pc ${D}${libdir}/pkgconfig/egl.pc
+        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv1_cm_x11.pc ${D}${libdir}/pkgconfig/glesv1_cm.pc
+        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv2_x11.pc ${D}${libdir}/pkgconfig/glesv2.pc
+        install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/vg_x11.pc ${D}${libdir}/pkgconfig/vg.pc
     else
         # Regular framebuffer
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv1_cm.pc ${D}${libdir}/pkgconfig/glesv1_cm.pc
@@ -171,7 +166,6 @@ do_install () {
         cp -r ${S}/apitrace/non-x11/usr/lib/* ${D}${libdir}
         cp -r ${S}/apitrace/non-x11/usr/bin/* ${D}${bindir}
         backend=fb
-        ! $XX_LEGACY || mv ${D}${libdir}/libGAL_egl.${backend}.so ${D}${libdir}/libGAL_egl.so	
     fi
 
     # Install Vendor ICDs for OpenCL's installable client driver loader (ICDs Loader)
@@ -197,18 +191,19 @@ do_install () {
     ln -sf libGLESv2.so.2.0.0 ${D}${libdir}/libGLESv2.so
 
     # skip packaging wayland libraries if no support is requested
-    if [ "${USE_WL}" = "no" ]; then
+    if [ "${HAS_WL}" = "no" ]; then
         rm ${D}${libdir}/libgc_wayland_protocol.*
         rm ${D}${libdir}/libwayland-viv.*
     fi
 
-    for backend in wl x11 fb dfb dri; do
+    for backend in wl x11 fb dri; do
         find ${D}${libdir} -name "*-$backend.so" -exec rm '{}' ';'
         find ${D}${libdir} -name "*.$backend.so" -exec rm '{}' ';'
     done
 
-    # FIXME: MX6SL does not have 3D support; hack it for now
-    if [ "${IS_MX6SL}" = "1" ]; then
+    # FIXME: For 2D only GPU, we need to remove some content which is
+    #        3D specific.
+    if [ "${IMXGPU}" = "2d" ]; then
         rm -rf ${D}${libdir}/libCLC* ${D}${includedir}/CL \
                \
                ${D}${libdir}/libGL* ${D}${includedir}/GL* \ 
@@ -229,6 +224,8 @@ do_install () {
 
     find ${D}${libdir} -type f -exec chmod 644 {} \;
     find ${D}${includedir} -type f -exec chmod 644 {} \;
+
+    chown -R root:root "${D}"
 }
 
 ALLOW_EMPTY_${PN} = "1"
@@ -243,6 +240,7 @@ FILES_libegl-mx6-dev = "${includedir}/EGL ${includedir}/KHR ${libdir}/pkgconfig/
 
 FILES_libgal-mx6 = "${libdir}/libGAL${SOLIBS} ${libdir}/libGAL_egl${SOLIBS}"
 FILES_libgal-mx6-dev = "${libdir}/libGAL${SOLIBSDEV} ${includedir}/HAL"
+RDEPENDS_libgal-mx6 += "kernel-module-imx-gpu-viv"
 INSANE_SKIP_libgal-mx6 += "build-deps"
 
 FILES_libvsc-mx6 = "${libdir}/libVSC${SOLIBS}"
@@ -293,6 +291,7 @@ RDEPENDS_libvivante-dri-mx6 = "libdrm"
 INSANE_SKIP_libwayland-viv-mx6 += "dev-so"
 FILES_libwayland-viv-mx6 =  "${libdir}/libwayland-viv${REALSOLIBS}  ${libdir}/libwayland-viv${SOLIBS}"
 FILES_libwayland-viv-mx6-dev = "${includedir}/wayland-viv ${libdir})/libwayland-viv${SOLIBSDEV} ${libdir}/pkgconfig/wayland-viv.pc"
+RPROVIDES_libwayland-viv-mx6 += "${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'xf86-video-imxfb-vivante', '', d)}"
 
 INSANE_SKIP_libgc-wayland-protocol-mx6 += "dev-so"
 FILES_libgc-wayland-protocol-mx6 = "${libdir}/libgc_wayland_protocol${REALSOLIBS} ${libdir}/libgc_wayland_protocol${SOLIBS}"
