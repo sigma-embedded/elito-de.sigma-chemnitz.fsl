@@ -240,7 +240,7 @@ FILES_libegl-mx6-dev = "${includedir}/EGL ${includedir}/KHR ${libdir}/pkgconfig/
 
 FILES_libgal-mx6 = "${libdir}/libGAL${SOLIBS} ${libdir}/libGAL_egl${SOLIBS}"
 FILES_libgal-mx6-dev = "${libdir}/libGAL${SOLIBSDEV} ${includedir}/HAL"
-RDEPENDS_libgal-mx6 += "kernel-module-imx-gpu-viv"
+RRECOMMENDS_libgal-mx6 += "kernel-module-imx-gpu-viv"
 INSANE_SKIP_libgal-mx6 += "build-deps"
 
 FILES_libvsc-mx6 = "${libdir}/libVSC${SOLIBS}"
