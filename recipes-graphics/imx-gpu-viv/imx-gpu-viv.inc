@@ -48,9 +48,20 @@ PACKAGES =+ "libclc-mx6 libclc-mx6-dev \
 "
 
 python __anonymous () {
-        has_vivante_kernel_driver_support = (d.getVar('MACHINE_HAS_VIVANTE_KERNEL_DRIVER_SUPPORT', True) or '0')
-        if has_vivante_kernel_driver_support != '1':
-                raise bb.parse.SkipPackage('The kernel of machine needs to have Vivante kernel driver support for this recipe to be used.')
+    # Skip package if it does not match the machine float-point type in use
+    is_machine_hardfp = bb.utils.contains("TUNE_FEATURES", "callconvention-hard", True, False, d)
+    is_package_hardfp = d.getVar("PV", True).endswith("-hfp")
+    plain_pv = d.getVar("PV", True).split('-')[0]
+    req_pv = d.getVar("KERNEL_IMX_GPU_VIV_API", True) or ""
+
+    if is_package_hardfp != is_machine_hardfp:
+        PN = d.getVar("PN", True)
+        PV = d.getVar("PV", True)
+        bb.debug(1, "Skipping %s (%s) as machine and package float-point does not match" % (PN, PV))
+        raise bb.parse.SkipPackage("Package Float-Point is not compatible with the machine")
+
+    if not plain_pv.startswith(req_pv):
+        raise bb.parse.SkipPackage("Kernel-API mismatch (%s vs. %s)" % (req_pv, plain_pv))
 }
 
 HAS_X11 = "${@bb.utils.contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
@@ -296,4 +307,4 @@ FILES_imx-gpu-viv-tools-apitrace = "${bindir} ${libdir}"
 FILES_imx-gpu-viv-demos = "/opt"
 INSANE_SKIP_imx-gpu-viv-demos += "rpaths"
 
-COMPATIBLE_MACHINE = "(mx6q|mx6dl|mx6sx|mx6sl)"
+COMPATIBLE_MACHINE = "(mx6)"
