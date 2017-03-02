@@ -5,7 +5,6 @@
 require recipes-graphics/xorg-driver/xorg-driver-video.inc
 
 PE = "3"
-PACKAGE_ARCH = "fsl-imx6"
 
 inherit autotools-brokensep update-rc.d pkgconfig
 
@@ -13,7 +12,6 @@ DEPENDS += "virtual/xserver virtual/libx11 virtual/libgal-x11 imx-gpu-viv pixman
 
 LIC_FILES_CHKSUM = "file://COPYING-MIT;md5=b5e9d9f5c02ea831ab3ecf802bb7c4f3"
 
-FSL_MIRROR = "http://www.freescale.com/lgfiles/NMG/MAD/YOCTO"
 SRC_URI = "${FSL_MIRROR}/xserver-xorg-video-imx-viv-${PV}.tar.gz \
             file://rc.autohdmi"
 

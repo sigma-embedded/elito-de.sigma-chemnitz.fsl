@@ -1,34 +1,27 @@
-# Copyright (C) 2012-2015 Freescale Semiconductor
-# Copyright (C) 2012-2014 O.S. Systems Software LTDA.
+# Copyright (C) 2012-2016 Freescale Semiconductor
+# Copyright (C) 2012-2016 O.S. Systems Software LTDA.
 # Released under the MIT license (see COPYING.MIT for the terms)
 
 DESCRIPTION = "GPU driver and apps for imx6"
 SECTION = "libs"
 LICENSE = "Proprietary"
 LIC_FILES_CHKSUM = "file://gpu-core/usr/include/gc_vdk.h;beginline=5;endline=11;md5=12c028cbbbedb4b8770267131500592c"
-LICENSE_FLAGS = "license-freescale"
 
-PACKAGE_ARCH = "fsl-imx6"
-
-DEPENDS += "${@\
-  bb.utils.contains('DISTRO_FEATURES', 'x11', \
-                    'virtual/libx11 libxdamage libxext libxfixes mesa', \
-  bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', '', d), d)} \
-  libpng \
+DEPENDS += " \
+    ${@bb.utils.contains('DISTRO_FEATURES', 'wayland', 'wayland', \
+       bb.utils.contains('DISTRO_FEATURES',     'x11', 'virtual/libx11 libxdamage libxext libxfixes mesa', \
+                                                       '', d), d)} \
+    libpng \
 "
 
-EXTRA_PROVIDES = " virtual/libgl virtual/libgles1 virtual/libgles2"
+EXTRA_PROVIDES = ""
+EXTRA_PROVIDES_imxgpu3d = " virtual/libgl virtual/libgles1 virtual/libgles2"
 PROVIDES += "virtual/wayland-egl virtual/libgal-x11 virtual/egl virtual/libopenvg virtual/libg2d ${EXTRA_PROVIDES}"
 
 PE = "1"
 
-do_unpack[postfuncs] =+ "fsl_unpack"
-fsl_unpack[dirs] = "${S}"
-fsl_unpack() {
-	sed '0,/^exit 0/d' ${WORKDIR}/${PN}-*.bin | tar xvjf - --strip-components=2
-}
+inherit fsl-eula-unpack
 
-FSL_MIRROR = "http://www.freescale.com/lgfiles/NMG/MAD/YOCTO"
 SRC_URI = "${FSL_MIRROR}/${PN}-${PV}.bin;fsl-eula=true"
 
 PACKAGES =+ "libclc-mx6 libclc-mx6-dev \
@@ -55,21 +48,9 @@ PACKAGES =+ "libclc-mx6 libclc-mx6-dev \
 "
 
 python __anonymous () {
-        # Skip package if it does not match the machine float-point type in use
-        is_machine_hardfp = bb.utils.contains("TUNE_FEATURES", "callconvention-hard", True, False, d)
-        is_package_hardfp = d.getVar("PV", True).endswith("-hfp")
-        plain_pv = d.getVar("PV", True).split('-')[0]
-        req_pv = d.getVar("KERNEL_IMX_GPU_VIV_API", True) or ""
-
-        if is_package_hardfp != is_machine_hardfp:
-                PN = d.getVar("PN", True)
-                PV = d.getVar("PV", True)
-                bb.debug(1, "Skipping %s (%s) as machine and package float-point does not match" % (PN, PV))
-                raise bb.parse.SkipPackage("Package Float-Point is not compatible with the machine")
-
-        if not plain_pv.startswith(req_pv):
-                raise bb.parse.SkipPackage("Kernel-API mismatch (%s vs. %s)" %
-                                           (req_pv, plain_pv))
+        has_vivante_kernel_driver_support = (d.getVar('MACHINE_HAS_VIVANTE_KERNEL_DRIVER_SUPPORT', True) or '0')
+        if has_vivante_kernel_driver_support != '1':
+                raise bb.parse.SkipPackage('The kernel of machine needs to have Vivante kernel driver support for this recipe to be used.')
 }
 
 HAS_X11 = "${@bb.utils.contains("DISTRO_FEATURES", "x11", "yes", "no", d)}"
@@ -130,8 +111,7 @@ do_install () {
 
     install -d ${D}${libdir}/pkgconfig
 
-    # The preference order, based in DISTRO_FEATURES. The backend
-    # preference order is Wayland, X11 and Framebuffer.
+    # The preference order, based in DISTRO_FEATURES, is Wayland (with or without X11), X11 and fb
     if [ "${HAS_WL}" = "yes" ]; then
         cp -r ${S}/apitrace/non-x11/usr/lib/* ${D}${libdir}
         cp -r ${S}/apitrace/non-x11/usr/bin/* ${D}${bindir}
@@ -145,7 +125,13 @@ do_install () {
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/gc_wayland_protocol.pc ${D}${libdir}/pkgconfig/gc_wayland_protocol.pc
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/wayland-egl.pc ${D}${libdir}/pkgconfig/wayland-egl.pc
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/wayland-viv.pc ${D}${libdir}/pkgconfig/wayland-viv.pc
+
+        if [ "${HAS_X11}" = "yes" ]; then
+            cp -r ${S}/gpu-core/usr/lib/dri ${D}${libdir}
+        fi
+
     elif [ "${HAS_X11}" = "yes" ]; then
+
         cp -r ${S}/gpu-core/usr/lib/dri ${D}${libdir}
         cp -r ${S}/apitrace/x11/usr/lib/* ${D}${libdir}
         cp -r ${S}/apitrace/x11/usr/bin/* ${D}${bindir}
@@ -157,11 +143,11 @@ do_install () {
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv2_x11.pc ${D}${libdir}/pkgconfig/glesv2.pc
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/vg_x11.pc ${D}${libdir}/pkgconfig/vg.pc
     else
-        # Regular framebuffer
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv1_cm.pc ${D}${libdir}/pkgconfig/glesv1_cm.pc
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/glesv2.pc ${D}${libdir}/pkgconfig/glesv2.pc
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/vg.pc ${D}${libdir}/pkgconfig/vg.pc
 
+        # Regular framebuffer
         install -m 0644 ${S}/gpu-core/usr/lib/pkgconfig/egl_linuxfb.pc ${D}${libdir}/pkgconfig/egl.pc
         cp -r ${S}/apitrace/non-x11/usr/lib/* ${D}${libdir}
         cp -r ${S}/apitrace/non-x11/usr/bin/* ${D}${bindir}
@@ -206,9 +192,9 @@ do_install () {
     if [ "${IMXGPU}" = "2d" ]; then
         rm -rf ${D}${libdir}/libCLC* ${D}${includedir}/CL \
                \
-               ${D}${libdir}/libGL* ${D}${includedir}/GL* \ 
+               ${D}${libdir}/libGL* ${D}${includedir}/GL* \
                \
-               ${D}${libdir}/libGLES* \
+               ${D}${libdir}/libGLES* ${D}${libdir}/pkgconfig/glesv1_cm.pc ${D}${libdir}/pkgconfig/glesv2.pc \
                \
                ${D}${libdir}/libOpenCL* ${D}${includedir}/CL \
                \
@@ -240,7 +226,7 @@ FILES_libegl-mx6-dev = "${includedir}/EGL ${includedir}/KHR ${libdir}/pkgconfig/
 
 FILES_libgal-mx6 = "${libdir}/libGAL${SOLIBS} ${libdir}/libGAL_egl${SOLIBS}"
 FILES_libgal-mx6-dev = "${libdir}/libGAL${SOLIBSDEV} ${includedir}/HAL"
-RRECOMMENDS_libgal-mx6 += "kernel-module-imx-gpu-viv"
+RDEPENDS_libgal-mx6 += "kernel-module-imx-gpu-viv"
 INSANE_SKIP_libgal-mx6 += "build-deps"
 
 FILES_libvsc-mx6 = "${libdir}/libVSC${SOLIBS}"
@@ -310,4 +296,4 @@ FILES_imx-gpu-viv-tools-apitrace = "${bindir} ${libdir}"
 FILES_imx-gpu-viv-demos = "/opt"
 INSANE_SKIP_imx-gpu-viv-demos += "rpaths"
 
-COMPATIBLE_MACHINE = "(mx6)"
+COMPATIBLE_MACHINE = "(mx6q|mx6dl|mx6sx|mx6sl)"

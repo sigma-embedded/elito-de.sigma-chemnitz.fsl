@@ -1,2 +1,1 @@
-PACKAGE_ARCH = "fsl-imx6"
-COMPATIBLE_MACHINE  = "(-)"
+COMPATIBLE_MACHINE_imxgpu2d = "(-)"
