@@ -19,3 +19,24 @@ MACHINEOVERRIDES_EXTENDER_mx6sl = "imxpxp:imxgpu2d:imxepdc"
 MACHINEOVERRIDES_EXTENDER_mx6ul = "imxpxp"
 MACHINEOVERRIDES_EXTENDER_mx6ull = "imxpxp:imxepdc"
 MACHINEOVERRIDES_EXTENDER_mx7d  = "imxpxp:imxepdc"
+
+def imx_merge_overrides(order, *sets):
+    tmp = set()
+
+    if isinstance(order, str):
+        order = order.split(':')
+
+    for s in sets:
+        if isinstance(s, str):
+            s = s.split(':')
+
+        tmp.update(s)
+
+    return ':'.join(sorted(tmp, key = order.index))
+
+# join Q + DL; processors do not differ very much
+# NOTE: order matters!! imxgpu2d must be before imxgpu3d!
+MACHINEOVERRIDES_EXTENDER_mx6qdl = "${@\
+  imx_merge_overrides('imxpxp:imxipu:imxvpu:imxgpu2d:imxgpu3d:imxepdc', \
+                      d.getVar('MACHINEOVERRIDES_EXTENDER_mx6q', False), \
+                      d.getVar('MACHINEOVERRIDES_EXTENDER_mx6dl', False))}"
