@@ -9,6 +9,8 @@ PREFERRED_PROVIDER_virtual/libgl    = "imx-gpu-viv"
 PREFERRED_PROVIDER_virtual/libgles1 = "imx-gpu-viv"
 PREFERRED_PROVIDER_virtual/libgles2 = "imx-gpu-viv"
 
+FSL_MIRROR = "http://www.freescale.com/lgfiles/NMG/MAD/YOCTO"
+
 PACKAGE_EXTRA_ARCHS_append = " fsl-imx6"
 
 # from https://github.com/Freescale/meta-freescale/blob/master/conf/machine/include/imx-base.inc
