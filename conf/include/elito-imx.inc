@@ -7,7 +7,8 @@ PREFERRED_PROVIDER_virtual/libgles2 = "imx-gpu-viv"
 
 FSL_MIRROR = "http://www.freescale.com/lgfiles/NMG/MAD/YOCTO"
 
-PACKAGE_EXTRA_ARCHS_append = " fsl-imx6"
+MACHINE_SOCARCH ??= "${TUNE_PKGARCH}-mx6"
+PACKAGE_EXTRA_ARCHS_append = " ${MACHINE_SOCARCH}"
 
 # from https://github.com/Freescale/meta-freescale/blob/master/conf/machine/include/imx-base.inc
 MACHINEOVERRIDES_EXTENDER_mx6q  = "imxipu:imxvpu:imxgpu2d:imxgpu3d"
