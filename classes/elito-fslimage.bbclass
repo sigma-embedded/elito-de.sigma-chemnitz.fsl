@@ -74,13 +74,14 @@ generate_imx_sdcard () {
 
     # Create partition table
     parted -s "$SDCARD" mklabel msdos
+    parted -s "$SDCARD" -a none unit KiB mkpart primary       1       "$p0_s"
     parted -s "$SDCARD" -a none unit KiB mkpart primary fat32 "$p0_s" "$p0_e"
     parted -s "$SDCARD" -a none unit KiB mkpart primary       "$p1_s" "$p1_e"
     parted "$SDCARD" unit KiB print
 
     # Create boot partition image
     BOOT_BLOCKS=$(LC_ALL=C parted -s "$SDCARD" unit b print \
-                      | awk '/ 1 / { print substr($4, 1, length($4 - 1)) / 1024 }')
+                      | awk '/ 2 / { print substr($4, 1, length($4 - 1)) / 1024 }')
     BOOT_BLOCKS=$(expr $BOOT_BLOCKS - $BOOT_BLOCKS % $vfat_align)
 
     t=`mktemp ${B}/boot.img.XXXXXX`
