@@ -1,4 +1,5 @@
 XSERVER_DRIVER = "xf86-video-imxfb-vivante"
+XSERVER = "xserver-xorg ${XSERVER_DRIVER}"
 
 PREFERRED_PROVIDER_virtual/egl      = "imx-gpu-viv"
 PREFERRED_PROVIDER_virtual/libgl    = "imx-gpu-viv"
